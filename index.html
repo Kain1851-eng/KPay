@@ -1,35 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Freeze Account Demo</title>
+  <meta charset="UTF-8" />
+  <title>KPay Dashboard</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #1a1a1a;
-      color: #eee;
+      background: #f0f2f5;
+      color: #333;
       padding: 20px;
     }
     #dashboard {
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
-      background: #2a2a2a;
+      background: #fff;
       padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #000;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    button {
-      margin: 10px 5px;
-      padding: 10px 15px;
+    .topBar {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .balanceSection {
+      font-size: 24px;
+      margin-bottom: 15px;
+    }
+    .actionButtons button {
+      margin: 5px;
+      padding: 10px 20px;
       font-size: 16px;
       border: none;
       border-radius: 6px;
-      background: #4caf50;
+      background: #0070ba;
       color: white;
       cursor: pointer;
     }
-    button:disabled {
-      background: #555;
+    .actionButtons button:disabled {
+      background: #aaa;
       cursor: not-allowed;
       opacity: 0.6;
     }
@@ -43,65 +53,66 @@
       margin-bottom: 15px;
       text-align: center;
     }
-    #historySection {
-      margin-top: 20px;
+    .historySection ul {
+      list-style: none;
+      padding: 0;
+    }
+    .historySection li {
+      padding: 6px 0;
+      border-bottom: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
 
 <div id="dashboard">
-  <h2>Welcome, <span id="usernameDisplay">Kain</span></h2>
+  <div class="topBar">
+    <span id="usernameDisplay">Kain</span>
+    <span id="vaultStatus">✅ Active</span>
+  </div>
 
-  <!-- Freeze Notice -->
+  <div class="balanceSection">
+    Balance: £<span id="balanceDisplay">0.00</span>
+  </div>
+
   <div id="freezeOverlay">
     🔒 <strong>Account Frozen:</strong> All transactions are disabled.
   </div>
 
-  <!-- Action Buttons -->
-  <button id="sendMoneyBtn" onclick="sendMoney()">Send Money</button>
-  <button id="completeSurveyBtn" onclick="completeSurvey()">Complete Survey</button>
-  <button id="toggleFreezeBtn" onclick="toggleFreeze()">Toggle Freeze</button>
+  <div class="actionButtons">
+    <button id="sendMoneyBtn" onclick="sendMoney()">Send</button>
+    <button id="completeSurveyBtn" onclick="completeSurvey()">Survey</button>
+    <button id="toggleFreezeBtn" onclick="toggleFreeze()">Freeze</button>
+  </div>
 
-  <!-- Transaction History -->
-  <div id="historySection">
-    <h3>Transaction History</h3>
+  <div class="historySection">
+    <h3>Recent Activity</h3>
     <ul id="historyList"></ul>
   </div>
 </div>
 
 <script>
-  // Simulated user data
   const users = {
     Kain: {
       frozen: false,
+      balance: 0.00,
       history: []
     }
   };
   const currentUser = "Kain";
 
   function updateDashboard() {
-    updateFreezeNotice();
-    disableDashboardActions();
-    updateHistory();
-  }
-
-  function updateFreezeNotice() {
     const user = users[currentUser];
+    document.getElementById("vaultStatus").textContent = user.frozen ? "🔒 Frozen" : "✅ Active";
+    document.getElementById("balanceDisplay").textContent = user.balance.toFixed(2);
     document.getElementById("freezeOverlay").style.display = user.frozen ? "block" : "none";
-  }
 
-  function disableDashboardActions() {
-    const user = users[currentUser];
-    document.querySelectorAll("#dashboard button").forEach(btn => {
+    document.querySelectorAll(".actionButtons button").forEach(btn => {
       if (btn.id !== "toggleFreezeBtn") {
         btn.disabled = user.frozen;
       }
     });
-  }
 
-  function updateHistory() {
-    const user = users[currentUser];
     const historyList = document.getElementById("historyList");
     historyList.innerHTML = "";
     user.history.forEach(entry => {
@@ -124,7 +135,8 @@
       alert("Account is frozen. No transactions allowed.");
       return;
     }
-    user.history.push("💸 Sent money");
+    user.balance -= 5.00;
+    user.history.push("💸 Sent £5.00");
     updateDashboard();
   }
 
@@ -134,11 +146,11 @@
       alert("Account is frozen. No transactions allowed.");
       return;
     }
-    user.history.push("📝 Completed survey");
+    user.balance += 2.50;
+    user.history.push("📝 Completed survey (+£2.50)");
     updateDashboard();
   }
 
-  // Initial load
   updateDashboard();
 </script>
 
