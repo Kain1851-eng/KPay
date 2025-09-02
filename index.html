@@ -1,11 +1,249 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="refresh" content="0; url=KPay.html" />
-    <title>Redirecting...</title>
-  </head>
-  <body>
-    <p>If you’re not redirected, <a href="KPay.html">click here</a>.</p>
-  </body>
-</html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KPay</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #0070ba;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      padding: 10px;
+      width: 100%;
+      background-color: #0070ba;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #005a9e;
+    }
+    .toggle-link {
+      color: #0070ba;
+      cursor: pointer;
+      text-align: center;
+      display: block;
+      margin-top: 10px;
+    }
+    .transactions {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+    .transaction {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .transaction:last-child {
+      border-bottom: none;
+    }
+    #welcome {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .frozen {
+      background: #e0e0e0;
+      color: #555;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
 
+  <header>KPay — Modular Trust Wallet</header>
+
+  <div class="container">
+
+    <!-- Sign Up -->
+    <div class="card" id="signupBox">
+      <h2>Create Account</h2>
+      <input type="text" id="signupUsername" placeholder="Username" />
+      <input type="password" id="signupPassword" placeholder="Password" />
+      <button onclick="createAccount()">Sign Up</button>
+      <span class="toggle-link" onclick="toggleAuth('login')">Already have an account? Log in</span>
+    </div>
+
+    <!-- Log In -->
+    <div class="card" id="loginBox" style="display:none;">
+      <h2>Sign In</h2>
+      <input type="text" id="loginUsername" placeholder="Username" />
+      <input type="password" id="loginPassword" placeholder="Password" />
+      <button onclick="signIn()">Log In</button>
+      <span class="toggle-link" onclick="toggleAuth('signup')">Need an account? Sign up</span>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="card" id="dashboard" style="display:none;">
+      <div id="welcome"></div>
+      <div id="freezeNotice" class="frozen" style="display:none;"></div>
+      <p><strong>Balance:</strong> £<span id="balanceDisplay">0</span></p>
+      <button onclick="toggleFreeze()">Toggle Freeze</button>
+      <button onclick="completeSurvey()">Take Survey (+£10)</button>
+      <button onclick="sendMoney()">Send £5 to Self [🎁 Gift]</button>
+
+      <div class="transactions">
+        <h3>Transaction History</h3>
+        <div id="historyList"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let users = JSON.parse(localStorage.getItem("kpay_users")) || {};
+    let currentUser = null;
+
+    function saveUsers() {
+      localStorage.setItem("kpay_users", JSON.stringify(users));
+    }
+
+    function toggleAuth(mode) {
+      document.getElementById("signupBox").style.display = mode === 'signup' ? "block" : "none";
+      document.getElementById("loginBox").style.display = mode === 'login' ? "block" : "none";
+    }
+
+    function createAccount() {
+      const username = document.getElementById("signupUsername").value.trim();
+      const password = document.getElementById("signupPassword").value;
+      if (!username || !password) {
+        alert("Please fill in both fields.");
+        return;
+      }
+      if (users[username]) {
+        alert("Username already exists.");
+        return;
+      }
+      users[username] = {
+        password: password,
+        balance: 0,
+        frozen: false,
+        freezeReason: "",
+        history: []
+      };
+      saveUsers();
+      alert("Account created. You can now sign in.");
+      toggleAuth('login');
+    }
+
+    function signIn() {
+      const username = document.getElementById("loginUsername").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      const user = users[username];
+      if (!user || user.password !== password) {
+        alert("Invalid credentials.");
+        return;
+      }
+      if (user.frozen) {
+        alert("Account is frozen. Reason: " + user.freezeReason);
+        return;
+      }
+      currentUser = username;
+      updateDashboard();
+    }
+
+    function updateDashboard() {
+      const user = users[currentUser];
+      document.getElementById("welcome").textContent = `Welcome back, ${currentUser}`;
+      document.getElementById("balanceDisplay").textContent = user.balance;
+      document.getElementById("signupBox").style.display = "none";
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+      updateHistory();
+      updateFreezeNotice();
+    }
+
+    function updateHistory() {
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = "";
+      const history = users[currentUser].history;
+      history.slice().reverse().forEach(tx => {
+        const div = document.createElement("div");
+        div.className = "transaction";
+        div.innerHTML = `<span>${tx.note}</span><span>£${tx.amount}</span>`;
+        historyList.appendChild(div);
+      });
+    }
+
+    function completeSurvey() {
+      if (!currentUser) return;
+      const key = `surveyDone_${currentUser}`;
+      if (localStorage.getItem(key)) {
+        alert("Survey already completed on this device.");
+        return;
+      }
+      localStorage.setItem(key, "true");
+      users[currentUser].balance += 10;
+      users[currentUser].history.push({ note: "Survey Reward [🧠 Insight]", amount: "+10.00" });
+      saveUsers();
+      updateDashboard();
+      alert("Survey completed! £10 added.");
+    }
+
+    function sendMoney() {
+      if (!currentUser) return;
+      users[currentUser].balance -= 5;
+      users[currentUser].history.push({ note: "Sent £5 to Self [🎁 Gift]", amount: "-5.00" });
+      saveUsers();
+      updateDashboard();
+    }
+
+    function toggleFreeze() {
+      if (!currentUser) return;
+      const user = users[currentUser];
+      user.frozen = !user.frozen;
+      user.freezeReason = user.frozen ? prompt("Reason for freezing account?") || "No reason given." : "";
+      saveUsers();
+      updateDashboard();
+    }
+
+    function updateFreezeNotice() {
+      const user = users[currentUser];
+      const notice = document.getElementById("freezeNotice");
+      if (user.frozen) {
+        notice.style.display = "block";
+        notice.textContent = `Account is frozen. Reason: ${user.freezeReason}`;
+      } else {
+        notice.style.display = "none";
+      }
+    }
+  </script>
+
+</body>
+</html>
