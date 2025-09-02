@@ -65,7 +65,7 @@
 </head>
 <body>
 
-<div id="dashboard">
+<div id="kpayDashboard">
   <div class="topBar">
     <span id="usernameDisplay">Kain</span>
     <span id="vaultStatus">✅ Active</span>
@@ -75,14 +75,15 @@
     Balance: £<span id="balanceDisplay">0.00</span>
   </div>
 
-  <div id="freezeOverlay">
+  <div id="freezeOverlay" style="display:none;">
     🔒 <strong>Account Frozen:</strong> All transactions are disabled.
   </div>
 
   <div class="actionButtons">
-    <button id="sendMoneyBtn" onclick="sendMoney()">Send</button>
-    <button id="completeSurveyBtn" onclick="completeSurvey()">Survey</button>
-    <button id="toggleFreezeBtn" onclick="toggleFreeze()">Freeze</button>
+    <button onclick="sendMoney()">Send</button>
+    <button onclick="requestMoney()">Request</button>
+    <button onclick="completeSurvey()">Survey</button>
+    <button onclick="toggleFreeze()">Freeze</button>
   </div>
 
   <div class="historySection">
@@ -90,6 +91,8 @@
     <ul id="historyList"></ul>
   </div>
 </div>
+
+
 
 <script>
   const users = {
